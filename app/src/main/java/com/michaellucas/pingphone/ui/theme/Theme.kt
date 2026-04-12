@@ -30,8 +30,9 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun PingPhoneTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic colors (Material You) on API 31+, teal palette fallback on older devices
-    dynamicColor: Boolean = true,
+    // Dynamic color disabled: WallpaperManager binder call is slow on the emulator and
+    // can generate near-black palettes from dark wallpapers, making the screen appear blank.
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
