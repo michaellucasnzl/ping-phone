@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PingPhone</string>
+
+    <!-- Monitoring notification -->
+    <string name="monitoring_notification_title">PingPhone is active</string>
+    <string name="monitoring_notification_text">Monitoring for trigger SMS. Send \"777\" to ring this phone.</string>
+
+    <!-- Alarm notification -->
+    <string name="alarm_notification_title">PingPhone Triggered!</string>
+    <string name="alarm_notification_text">A trigger SMS was received. Tap to dismiss the alarm.</string>
+
+    <!-- Alarm dismiss screen -->
+    <string name="alarm_triggered_title">PingPhone Triggered!</string>
+    <string name="alarm_triggered_subtitle">A trigger SMS was received</string>
+    <string name="dismiss">Dismiss</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_title">Welcome to PingPhone</string>
+    <string name="onboarding_subtitle">PingPhone needs a few permissions to ring your phone when its trigger SMS is received.</string>
+    <string name="permission_sms_title">SMS Access</string>
+    <string name="permission_sms_desc">Required to detect the trigger SMS even when the app is not open.</string>
+    <string name="permission_dnd_title">Do Not Disturb Override</string>
+    <string name="permission_dnd_desc">Required to override silent/DND mode and make the alarm audible when the phone is on mute.</string>
+    <string name="permission_notifications_title">Notifications</string>
+    <string name="permission_notifications_desc">Required to show the persistent monitoring status and the alarm notification.</string>
+    <string name="grant">Grant Permission</string>
+    <string name="all_set">All set — Let\'s go!</string>
+
+    <!-- Main screen -->
+    <string name="status_monitoring">Monitoring for trigger SMS</string>
+    <string name="status_incomplete">Setup incomplete — permissions needed</string>
+    <string name="trigger_code_label">Trigger Code</string>
+    <string name="trigger_code_hint">Send an SMS containing this text to ring the phone</string>
+    <string name="volume_label">Alarm Volume: %d%%</string>
+    <string name="alarm_sound_label">Alarm Sound</string>
+    <string name="default_alarm_sound">System default alarm</string>
+    <string name="pick_alarm_sound">Pick Alarm Sound</string>
+    <string name="change">Change</string>
+    <string name="save">Save</string>
+    <string name="test_alarm">Test Alarm</string>
+    <string name="warning_sms">⚠ SMS permission not granted — trigger SMS will not be detected</string>
+    <string name="warning_dnd">⚠ DND permission not granted — alarm may not override silent mode</string>
+</resources>

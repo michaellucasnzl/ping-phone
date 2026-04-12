@@ -1,0 +1,189 @@
+package com.michaellucas.pingphone.ui.screen
+
+import android.Manifest
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.michaellucas.pingphone.R
+import com.michaellucas.pingphone.viewmodel.SettingsViewModel
+
+@Composable
+fun PermissionOnboardingScreen(
+    permissions: SettingsViewModel.PermissionState,
+    onPermissionsUpdated: () -> Unit
+) {
+    val context = LocalContext.current
+
+    val smsLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { onPermissionsUpdated() }
+
+    val notificationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { onPermissionsUpdated() }
+
+    Scaffold { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.onboarding_title),
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = stringResource(R.string.onboarding_subtitle),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            HorizontalDivider()
+
+            // Step 1: SMS
+            PermissionStep(
+                stepNumber = 1,
+                title = stringResource(R.string.permission_sms_title),
+                description = stringResource(R.string.permission_sms_desc),
+                granted = permissions.sms,
+                onGrant = {
+                    smsLauncher.launch(
+                        arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS)
+                    )
+                }
+            )
+
+            // Step 2: DND access (requires special settings intent — no runtime dialog)
+            PermissionStep(
+                stepNumber = 2,
+                title = stringResource(R.string.permission_dnd_title),
+                description = stringResource(R.string.permission_dnd_desc),
+                granted = permissions.dnd,
+                onGrant = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                    )
+                }
+            )
+
+            // Step 3: Notifications (Android 13+ only)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                PermissionStep(
+                    stepNumber = 3,
+                    title = stringResource(R.string.permission_notifications_title),
+                    description = stringResource(R.string.permission_notifications_desc),
+                    granted = permissions.notifications,
+                    onGrant = {
+                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            if (permissions.allGranted) {
+                Button(
+                    onClick = onPermissionsUpdated,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(stringResource(R.string.all_set))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionStep(
+    stepNumber: Int,
+    title: String,
+    description: String,
+    granted: Boolean,
+    onGrant: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (granted)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(
+                        if (granted) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.outline,
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = if (granted) "✓" else stepNumber.toString(),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.SemiBold)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (!granted) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    FilledTonalButton(onClick = onGrant) {
+                        Text(stringResource(R.string.grant))
+                    }
+                }
+            }
+        }
+    }
+}
