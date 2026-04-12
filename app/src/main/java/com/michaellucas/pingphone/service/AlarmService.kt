@@ -34,9 +34,10 @@ class AlarmService : Service() {
     // Guard against multiple simultaneous alarm starts (e.g. two trigger SMS in quick succession)
     @Volatile private var isAlarming = false
 
-    // State saved before overriding audio so we can restore it on dismiss
+    // State saved before overriding audio/DND so we can restore it on dismiss
     private var savedRingerMode: Int = AudioManager.RINGER_MODE_NORMAL
     private var savedAlarmVolume: Int = 0
+    private var savedInterruptionFilter: Int = NotificationManager.INTERRUPTION_FILTER_ALL
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -61,8 +62,9 @@ class AlarmService : Service() {
         savedRingerMode = audioManager.ringerMode
         savedAlarmVolume = audioManager.getStreamVolume(AudioManager.STREAM_ALARM)
 
-        // Override DND if permission was granted
+        // Save current DND state then disable it so the alarm is audible
         if (notificationManager.isNotificationPolicyAccessGranted) {
+            savedInterruptionFilter = notificationManager.currentInterruptionFilter
             notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
         }
 
@@ -127,10 +129,14 @@ class AlarmService : Service() {
         wakeLock?.let { if (it.isHeld) it.release() }
         wakeLock = null
 
-        // Restore previous audio state
+        // Restore previous audio and DND state
         val audioManager = getSystemService(AudioManager::class.java)
+        val notificationManager = getSystemService(NotificationManager::class.java)
         audioManager.setStreamVolume(AudioManager.STREAM_ALARM, savedAlarmVolume, 0)
         audioManager.ringerMode = savedRingerMode
+        if (notificationManager.isNotificationPolicyAccessGranted) {
+            notificationManager.setInterruptionFilter(savedInterruptionFilter)
+        }
 
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
