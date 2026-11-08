@@ -2,6 +2,13 @@
 <resources>
     <string name="app_name">PingPhone</string>
 
+    <!-- Notification channels -->
+    <string name="monitoring_channel_name">Monitoring Status</string>
+    <string name="monitoring_channel_description">Shows that PingPhone is actively monitoring for the trigger SMS</string>
+    <string name="alarm_channel_name">Alarm</string>
+    <string name="alarm_channel_description">Full-screen alarm notification when the trigger SMS is received</string>
+    <string name="alarm_legacy_channel_name">Alarm (legacy)</string>
+
     <!-- Monitoring notification -->
     <string name="monitoring_notification_title">PingPhone is active</string>
     <string name="monitoring_notification_text">Monitoring for trigger SMS. Send \"777\" to ring this phone.</string>
@@ -24,6 +31,10 @@
     <string name="permission_dnd_desc">Required to override silent/DND mode and make the alarm audible when the phone is on mute.</string>
     <string name="permission_notifications_title">Notifications</string>
     <string name="permission_notifications_desc">Required to show the persistent monitoring status and the alarm notification.</string>
+    <string name="permission_battery_title">Battery Optimization Exemption</string>
+    <string name="permission_battery_desc">Required so Android does not kill PingPhone and miss the trigger SMS. Without this, the alarm may not fire when the app is backgrounded.</string>
+    <string name="permission_fullscreen_title">Full-Screen Alarm Access</string>
+    <string name="permission_fullscreen_desc">Required on Android 14+ for the alarm dismiss screen to pop up over the lock screen.</string>
     <string name="grant">Grant Permission</string>
     <string name="all_set">All set — Let\'s go!</string>
 
@@ -32,6 +43,7 @@
     <string name="status_incomplete">Setup incomplete — permissions needed</string>
     <string name="trigger_code_label">Trigger Code</string>
     <string name="trigger_code_hint">Send an SMS containing this text to ring the phone</string>
+    <string name="trigger_code_invalid">Trigger code must be 1–50 characters and cannot be blank.</string>
     <string name="volume_label">Alarm Volume: %d%%</string>
     <string name="alarm_sound_label">Alarm Sound</string>
     <string name="default_alarm_sound">System default alarm</string>

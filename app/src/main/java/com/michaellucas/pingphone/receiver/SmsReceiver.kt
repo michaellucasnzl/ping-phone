@@ -4,10 +4,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.provider.Telephony
+import android.util.Log
 import com.michaellucas.pingphone.data.SettingsRepository
+import com.michaellucas.pingphone.data.TriggerMatcher
 import com.michaellucas.pingphone.service.AlarmService
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -24,20 +28,35 @@ class SmsReceiver : BroadcastReceiver() {
 
         val pendingResult = goAsync()
         val repository = SettingsRepository(context)
+        val scope = CoroutineScope(Dispatchers.IO)
 
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             try {
                 val triggerCode = repository.triggerCode.first()
-                // Use word-boundary regex so "777" won't match inside "7779" or "17777"
-                val matched = triggerCode.isNotBlank() &&
-                    Regex("\\b${Regex.escape(triggerCode)}\\b").containsMatchIn(fullBody)
+                val matched = TriggerMatcher.matches(fullBody, triggerCode)
                 if (matched) {
                     val serviceIntent = Intent(context, AlarmService::class.java)
-                    context.startForegroundService(serviceIntent)
+                    try {
+                        context.startForegroundService(serviceIntent)
+                    } catch (e: Exception) {
+                        // Foreground-service start can be rejected on Android 12+ background-restriction
+                        // enforcement. Log without SMS contents; the user's battery-optimization exemption
+                        // (requested in onboarding) is the documented workaround.
+                        Log.w(TAG, "Failed to start AlarmService: ${e.javaClass.simpleName}: ${e.message}")
+                    }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to process SMS: ${e.javaClass.simpleName}: ${e.message}")
             } finally {
                 pendingResult.finish()
+                scope.cancel()
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "SmsReceiver"
     }
 }

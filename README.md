@@ -11,7 +11,7 @@ An Android app that rings your phone on demand, even when it's on silent or Do N
    - Disables Do Not Disturb / silent / vibrate mode
    - Sets the alarm volume to your chosen level (default: 70%)
    - Plays a loud looping alarm tone
-   - Shows a full-screen dismiss button, even over the lock screen
+   - Opens a full-screen dismiss screen immediately, even over the lock screen
 3. Tap **Dismiss** to stop the alarm. PingPhone automatically restores your previous volume and silent-mode settings.
 
 ---
@@ -33,10 +33,12 @@ An Android app that rings your phone on demand, even when it's on silent or Do N
 
 - Android 8.0 (API 26) or higher
 - Permissions required:
-  - **Receive SMS / Read SMS** — to detect the trigger message
+  - **Receive SMS** — to detect the trigger message
   - **Do Not Disturb access** — to override silent/DND mode (granted via a special system settings screen)
   - **Modify audio settings** — to change the ringer volume
   - **Post notifications** — to show the monitoring status and alarm notification (Android 13+)
+  - **Battery optimization exemption** — so the system does not kill the app and miss the trigger (Android 12+)
+  - **Full-screen intent access** — so the dismiss screen can appear over the lock screen (Android 14+)
 
 ---
 
@@ -44,7 +46,7 @@ An Android app that rings your phone on demand, even when it's on silent or Do N
 
 ### Prerequisites
 
-- [Android Studio](https://developer.android.com/studio) (latest stable) with the Android SDK installed
+- [Android Studio](https://developer.android.com/studio) (latest stable) with the Android SDK installed — the project uses AGP 9.5, Gradle 9.6, Kotlin 2.4, and Java 17
 - A connected Android device or emulator (API 26+)
 
 ### Steps
@@ -94,11 +96,14 @@ PingPhone is not on the Play Store. Install the APK directly:
 
 ## First Launch
 
-On first launch, PingPhone will walk you through three permission steps:
+On first launch, PingPhone will walk you through its permission steps:
 
-1. **SMS access** — tap Grant and allow both SMS permissions in the system dialog
+1. **SMS access** — tap Grant and allow the SMS permission in the system dialog
 2. **Do Not Disturb access** — tap Grant; the system settings page opens — find PingPhone in the list and toggle it on, then return to the app
 3. **Notifications** (Android 13+ only) — tap Grant and allow in the system dialog
+4. **Battery optimization exemption** (Android 12+ only) — tap Grant and allow PingPhone to run without battery restrictions
+
+On Android 14+, a further step appears if full-screen intent access has not been granted; it opens the system settings page for that permission. The onboarding screen shows only the steps that apply to your device.
 
 Once all permissions are green, the main screen is shown with a **"Monitoring for trigger SMS"** status indicator.
 
@@ -124,7 +129,8 @@ app/src/main/
 ├── java/com/michaellucas/pingphone/
 │   ├── PingPhoneApplication.kt       # Notification channel setup
 │   ├── data/
-│   │   └── SettingsRepository.kt     # DataStore-backed persistent settings
+│   │   ├── SettingsRepository.kt     # DataStore-backed persistent settings
+│   │   └── TriggerMatcher.kt         # Trigger-code validation and word-boundary matching
 │   ├── viewmodel/
 │   │   └── SettingsViewModel.kt      # UI state + permission state
 │   ├── receiver/
@@ -143,6 +149,10 @@ app/src/main/
 └── res/
     ├── drawable/                     # Adaptive icon + notification icon
     └── values/                       # Strings, colours, theme
+
+app/src/test/
+└── java/com/michaellucas/pingphone/data/
+    └── TriggerMatcherTest.kt         # JVM unit tests for trigger matching
 ```
 
 ---

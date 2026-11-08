@@ -5,4 +5,12 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- Alarm dismiss screen: red window/system bars so there is no white flash before Compose renders -->
+    <style name="Theme.PingPhone.AlarmDismiss" parent="Theme.PingPhone">
+        <item name="android:windowBackground">@color/alarm_red</item>
+        <item name="android:statusBarColor">@color/alarm_red</item>
+        <item name="android:navigationBarColor">@color/alarm_red</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
 </resources>

@@ -2,4 +2,7 @@
 <resources>
     <!-- Adaptive icon background color — deep teal -->
     <color name="ic_launcher_background">#004D40</color>
+
+    <!-- Shared alarm red used by the dismiss window theme and Compose surface -->
+    <color name="alarm_red">#FFB71C1C</color>
 </resources>

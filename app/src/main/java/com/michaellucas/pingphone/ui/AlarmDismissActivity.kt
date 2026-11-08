@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.addCallback
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -34,8 +35,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.michaellucas.pingphone.R
@@ -64,6 +67,9 @@ class AlarmDismissActivity : ComponentActivity() {
                 AlarmDismissScreen(onDismiss = ::dismissAlarm)
             }
         }
+
+        // System back/gesture must stop the alarm too, not just finish the activity.
+        onBackPressedDispatcher.addCallback(this) { dismissAlarm() }
     }
 
     private fun dismissAlarm() {
@@ -89,7 +95,7 @@ fun AlarmDismissScreen(onDismiss: () -> Unit) {
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = Color(0xFFB71C1C)
+        color = colorResource(R.color.alarm_red)
     ) {
         Column(
             modifier = Modifier
@@ -134,7 +140,7 @@ fun AlarmDismissScreen(onDismiss: () -> Unit) {
                     .height(72.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.White,
-                    contentColor = Color(0xFFB71C1C)
+                    contentColor = colorResource(R.color.alarm_red)
                 ),
                 shape = MaterialTheme.shapes.large
             ) {
@@ -145,5 +151,13 @@ fun AlarmDismissScreen(onDismiss: () -> Unit) {
                 )
             }
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun AlarmDismissScreenPreview() {
+    PingPhoneTheme {
+        AlarmDismissScreen(onDismiss = {})
     }
 }

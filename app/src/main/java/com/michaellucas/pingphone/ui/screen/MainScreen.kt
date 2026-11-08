@@ -47,6 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.michaellucas.pingphone.R
+import com.michaellucas.pingphone.data.TriggerMatcher
 import com.michaellucas.pingphone.service.AlarmService
 import com.michaellucas.pingphone.viewmodel.SettingsViewModel
 
@@ -61,6 +62,22 @@ fun MainScreen(viewModel: SettingsViewModel) {
 
     // Local copy so the text field updates on each keystroke but only saves on explicit tap
     var triggerCodeInput by remember(triggerCode) { mutableStateOf(triggerCode) }
+    val isCodeValid = TriggerMatcher.isValidCode(triggerCodeInput)
+    val showCodeError = triggerCodeInput.isNotEmpty() && !isCodeValid
+
+    // Local slider value so dragging does not write to DataStore on every tick
+    var sliderValue by remember(volumePercent) { mutableStateOf(volumePercent.toFloat()) }
+
+    // Cache the ringtone title lookup instead of hitting the RingtoneManager on every recomposition
+    val alarmSoundLabel = remember(alarmSoundUri) {
+        if (alarmSoundUri.isEmpty()) {
+            context.getString(R.string.default_alarm_sound)
+        } else {
+            val uri = Uri.parse(alarmSoundUri)
+            RingtoneManager.getRingtone(context, uri)?.getTitle(context)
+                ?: context.getString(R.string.default_alarm_sound)
+        }
+    }
 
     val ringtoneLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -103,13 +120,26 @@ fun MainScreen(viewModel: SettingsViewModel) {
                 value = triggerCodeInput,
                 onValueChange = { triggerCodeInput = it },
                 label = { Text(stringResource(R.string.trigger_code_label)) },
-                supportingText = { Text(stringResource(R.string.trigger_code_hint)) },
+                isError = showCodeError,
+                supportingText = {
+                    if (showCodeError) {
+                        Text(
+                            stringResource(R.string.trigger_code_invalid),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        Text(stringResource(R.string.trigger_code_hint))
+                    }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 trailingIcon = {
                     if (triggerCodeInput != triggerCode) {
-                        TextButton(onClick = { viewModel.saveTriggerCode(triggerCodeInput) }) {
+                        TextButton(
+                            onClick = { viewModel.saveTriggerCode(triggerCodeInput) },
+                            enabled = isCodeValid
+                        ) {
                             Text(stringResource(R.string.save))
                         }
                     }
@@ -119,12 +149,15 @@ fun MainScreen(viewModel: SettingsViewModel) {
             // Volume slider
             Column {
                 Text(
-                    text = stringResource(R.string.volume_label, volumePercent),
+                    text = stringResource(R.string.volume_label, sliderValue.toInt()),
                     style = MaterialTheme.typography.bodyLarge
                 )
                 Slider(
-                    value = volumePercent.toFloat(),
-                    onValueChange = { viewModel.saveVolumePercent(it.toInt()) },
+                    value = sliderValue,
+                    onValueChange = { sliderValue = it },
+                    onValueChangeFinished = {
+                        viewModel.saveVolumePercent(sliderValue.toInt())
+                    },
                     valueRange = 10f..100f,
                     steps = 17,
                     modifier = Modifier.fillMaxWidth()
@@ -135,15 +168,7 @@ fun MainScreen(viewModel: SettingsViewModel) {
             OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.alarm_sound_label)) },
-                    supportingContent = {
-                        val displayName = if (alarmSoundUri.isNotEmpty()) {
-                            RingtoneManager.getRingtone(context, Uri.parse(alarmSoundUri))
-                                ?.getTitle(context) ?: alarmSoundUri
-                        } else {
-                            stringResource(R.string.default_alarm_sound)
-                        }
-                        Text(displayName)
-                    },
+                    supportingContent = { Text(alarmSoundLabel) },
                     trailingContent = {
                         FilledTonalButton(
                             onClick = {

@@ -5,6 +5,7 @@ import android.app.Application
 import android.app.NotificationManager
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -54,18 +55,36 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             true
         }
 
+        val hasBatteryOptimization = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val pm = context.getSystemService(PowerManager::class.java)
+            pm.isIgnoringBatteryOptimizations(context.packageName)
+        } else {
+            true
+        }
+
+        val hasFullScreenIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            nm.canUseFullScreenIntent()
+        } else {
+            true
+        }
+
         _permissionsGranted.value = PermissionState(
             sms = hasSms,
             dnd = hasDnd,
-            notifications = hasNotifications
+            notifications = hasNotifications,
+            batteryOptimization = hasBatteryOptimization,
+            fullScreenIntent = hasFullScreenIntent
         )
     }
 
     data class PermissionState(
         val sms: Boolean = false,
         val dnd: Boolean = false,
-        val notifications: Boolean = true
+        val notifications: Boolean = true,
+        val batteryOptimization: Boolean = true,  // true below API 31 (no exemption needed)
+        val fullScreenIntent: Boolean = true       // true below API 34 (no special access needed)
     ) {
-        val allGranted: Boolean get() = sms && dnd && notifications
+        val allGranted: Boolean
+            get() = sms && dnd && notifications && batteryOptimization && fullScreenIntent
     }
 }

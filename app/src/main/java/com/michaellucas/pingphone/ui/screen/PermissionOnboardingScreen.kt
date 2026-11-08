@@ -1,7 +1,9 @@
 package com.michaellucas.pingphone.ui.screen
 
 import android.Manifest
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -53,6 +55,18 @@ fun PermissionOnboardingScreen(
         ActivityResultContracts.RequestPermission()
     ) { onPermissionsUpdated() }
 
+    val showNotifications = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val showBattery = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val showFullScreen = Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+        !permissions.fullScreenIntent
+
+    // Sequential step numbers with no gaps when conditional steps are hidden.
+    val smsStep = 1
+    val dndStep = 2
+    val notificationsStep = 3
+    val batteryStep = if (showNotifications) 4 else 3
+    val fullScreenStep = batteryStep + 1
+
     Scaffold { padding ->
         Column(
             modifier = Modifier
@@ -76,20 +90,18 @@ fun PermissionOnboardingScreen(
 
             // Step 1: SMS
             PermissionStep(
-                stepNumber = 1,
+                stepNumber = smsStep,
                 title = stringResource(R.string.permission_sms_title),
                 description = stringResource(R.string.permission_sms_desc),
                 granted = permissions.sms,
                 onGrant = {
-                    smsLauncher.launch(
-                        arrayOf(Manifest.permission.RECEIVE_SMS, Manifest.permission.READ_SMS)
-                    )
+                    smsLauncher.launch(arrayOf(Manifest.permission.RECEIVE_SMS))
                 }
             )
 
             // Step 2: DND access (requires special settings intent — no runtime dialog)
             PermissionStep(
-                stepNumber = 2,
+                stepNumber = dndStep,
                 title = stringResource(R.string.permission_dnd_title),
                 description = stringResource(R.string.permission_dnd_desc),
                 granted = permissions.dnd,
@@ -103,14 +115,58 @@ fun PermissionOnboardingScreen(
             )
 
             // Step 3: Notifications (Android 13+ only)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (showNotifications) {
                 PermissionStep(
-                    stepNumber = 3,
+                    stepNumber = notificationsStep,
                     title = stringResource(R.string.permission_notifications_title),
                     description = stringResource(R.string.permission_notifications_desc),
                     granted = permissions.notifications,
                     onGrant = {
                         notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                )
+            }
+
+            // Step 4: Battery optimization exemption (Android 12+ only)
+            if (showBattery) {
+                PermissionStep(
+                    stepNumber = batteryStep,
+                    title = stringResource(R.string.permission_battery_title),
+                    description = stringResource(R.string.permission_battery_desc),
+                    granted = permissions.batteryOptimization,
+                    onGrant = {
+                        try {
+                            context.startActivity(
+                                Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                            )
+                        } catch (e: ActivityNotFoundException) {
+                            // No system handler for the request; nothing else we can do.
+                        }
+                    }
+                )
+            }
+
+            // Step 5: Full-screen intent access (Android 14+, only when not granted)
+            if (showFullScreen) {
+                PermissionStep(
+                    stepNumber = fullScreenStep,
+                    title = stringResource(R.string.permission_fullscreen_title),
+                    description = stringResource(R.string.permission_fullscreen_desc),
+                    granted = permissions.fullScreenIntent,
+                    onGrant = {
+                        try {
+                            context.startActivity(
+                                Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                }
+                            )
+                        } catch (e: ActivityNotFoundException) {
+                            // No system handler for the setting; nothing else we can do.
+                        }
                     }
                 )
             }

@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- SMS interception -->
+    <!-- SMS interception — RECEIVE_SMS alone provides both the message body and the
+         sender number on inbound SMS, so READ_SMS is not required. -->
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.READ_SMS" />
 
     <!-- Audio control -->
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
-    <uses-permission android:name="android.permission.VIBRATE" />
 
     <!-- DND override (granted via special settings screen, not runtime dialog) -->
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
@@ -19,15 +18,22 @@
     <!-- Notifications (runtime on API 33+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Full-screen intent for the alarm dismiss screen (Android 14+ special access) -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
     <!-- Wake lock so alarm plays with screen off -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Boot persistence -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- Needed on Android 12+ so the OS does not kill the app and miss the SMS trigger. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- allowBackup=false: alarm-app configuration should not be backed up to the cloud. -->
     <application
         android:name=".PingPhoneApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
@@ -50,7 +56,9 @@
             android:exported="false"
             android:showWhenLocked="true"
             android:turnScreenOn="true"
-            android:launchMode="singleInstance" />
+            android:launchMode="singleInstance"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.PingPhone.AlarmDismiss" />
 
         <!-- SMS broadcast receiver — manifest-registered so it works when the app is not running.
              android:permission protects it so only the system (which holds BROADCAST_SMS) can trigger it. -->
@@ -69,7 +77,6 @@
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 

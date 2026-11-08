@@ -16,6 +16,7 @@ import com.michaellucas.pingphone.PingPhoneApplication
 import com.michaellucas.pingphone.R
 import com.michaellucas.pingphone.data.SettingsRepository
 import com.michaellucas.pingphone.ui.AlarmDismissActivity
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -43,7 +44,7 @@ class AlarmService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_STOP -> stopAlarm()
+            ACTION_STOP -> stopAlarm(idempotent = true)
             else -> startAlarm()
         }
         return START_NOT_STICKY
@@ -54,6 +55,19 @@ class AlarmService : Service() {
         isAlarming = true
         // Must call startForeground() quickly to satisfy Android requirements
         startForeground(NOTIFICATION_ID, buildAlarmNotification())
+
+        // Pop up the full-screen dismiss activity immediately, even when the device is unlocked.
+        // (setFullScreenIntent only auto-launches when the screen is locked; this startActivity
+        // ensures it shows up promptly in all cases. Best-effort: if Android blocks background
+        // activity launch, the full-screen notification intent remains the fallback.)
+        try {
+            val dismissIntent = Intent(this, AlarmDismissActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            startActivity(dismissIntent)
+        } catch (e: Exception) {
+            // Best-effort: ignore — full-screen notification intent is the fallback.
+        }
 
         val audioManager = getSystemService(AudioManager::class.java)
         val notificationManager = getSystemService(NotificationManager::class.java)
@@ -86,7 +100,7 @@ class AlarmService : Service() {
                     else -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                         ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
                         ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                        ?: run { stopSelf(); return@launch }
+                        ?: run { cleanupAndStopSelf(); return@launch }
                 }
 
                 // Acquire partial wake lock so alarm plays with screen off (max 10 minutes)
@@ -106,19 +120,48 @@ class AlarmService : Service() {
                         )
                         setDataSource(this@AlarmService, alarmUri)
                         isLooping = true
-                        prepare()
-                        start()
+                        setOnPreparedListener { mp ->
+                            // Only start if the alarm is still active and this is the current player.
+                            if (isAlarming && mp === mediaPlayer) mp.start() else mp.release()
+                        }
+                        setOnErrorListener { mp, _, _ ->
+                            if (mp === mediaPlayer) mediaPlayer = null
+                            mp.release()
+                            cleanupAndStopSelf()
+                            false
+                        }
+                        prepareAsync()
                     }
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                stopSelf()
+                cleanupAndStopSelf()
             }
         }
     }
 
-    private fun stopAlarm() {
+    private fun stopAlarm(idempotent: Boolean = false) {
+        // A stale ACTION_STOP can arrive at a fresh service instance. In that case there is no
+        // active alarm to clean up, so only remove foreground state and stop — never touch audio
+        // or DND (savedAlarmVolume defaults to 0 and would otherwise zero the alarm stream).
+        if (idempotent && !isAlarming) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
+        cleanupAndStopSelf()
+    }
+
+    private fun cleanupAndStopSelf() {
+        if (!isAlarming) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return
+        }
         isAlarming = false
         startupJob?.cancel()
+        startupJob = null
 
         mediaPlayer?.let {
             if (it.isPlaying) it.stop()
@@ -157,7 +200,7 @@ class AlarmService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        NotificationCompat.Builder(this, PingPhoneApplication.CHANNEL_ALARM)
+        NotificationCompat.Builder(this, PingPhoneApplication.CHANNEL_ALARM_V2)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(getString(R.string.alarm_notification_title))
             .setContentText(getString(R.string.alarm_notification_text))
@@ -167,6 +210,7 @@ class AlarmService : Service() {
             .addAction(0, getString(R.string.dismiss), stopServicePendingIntent)
             .setAutoCancel(false)
             .setOngoing(true)
+            .setSilent(true)
             .build()
     }
 

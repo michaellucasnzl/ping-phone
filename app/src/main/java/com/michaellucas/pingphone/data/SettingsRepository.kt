@@ -33,7 +33,7 @@ class SettingsRepository(private val context: Context) {
     }
 
     suspend fun saveTriggerCode(code: String) {
-        if (code.isBlank() || code.length > 50) return
+        if (!TriggerMatcher.isValidCode(code)) return
         context.dataStore.edit { prefs -> prefs[Keys.TRIGGER_CODE] = code }
     }
 
