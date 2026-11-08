@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
+import androidx.core.net.toUri
 import com.michaellucas.pingphone.PingPhoneApplication
 import com.michaellucas.pingphone.R
 import com.michaellucas.pingphone.data.SettingsRepository
@@ -96,7 +97,7 @@ class AlarmService : Service() {
                 audioManager.setStreamVolume(AudioManager.STREAM_ALARM, targetVolume, 0)
 
                 val alarmUri: Uri = when {
-                    alarmSoundUriString.isNotEmpty() -> Uri.parse(alarmSoundUriString)
+                    alarmSoundUriString.isNotEmpty() -> alarmSoundUriString.toUri()
                     else -> RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
                         ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_RINGTONE)
                         ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)

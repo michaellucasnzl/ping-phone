@@ -36,6 +36,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -45,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.michaellucas.pingphone.R
 import com.michaellucas.pingphone.data.TriggerMatcher
@@ -66,16 +68,19 @@ fun MainScreen(viewModel: SettingsViewModel) {
     val showCodeError = triggerCodeInput.isNotEmpty() && !isCodeValid
 
     // Local slider value so dragging does not write to DataStore on every tick
-    var sliderValue by remember(volumePercent) { mutableStateOf(volumePercent.toFloat()) }
+    var sliderValue by remember(volumePercent) { mutableFloatStateOf(volumePercent.toFloat()) }
 
-    // Cache the ringtone title lookup instead of hitting the RingtoneManager on every recomposition
-    val alarmSoundLabel = remember(alarmSoundUri) {
+    // Cache the ringtone title lookup instead of hitting the RingtoneManager on every recomposition.
+    // Hoist stringResource out of `remember` (lint: LocalContextGetResourceValueCall — context.getString
+    // is not configuration-aware).
+    val defaultAlarmSoundLabel = stringResource(R.string.default_alarm_sound)
+    val pickAlarmSoundTitle = stringResource(R.string.pick_alarm_sound)
+    val alarmSoundLabel = remember(alarmSoundUri, defaultAlarmSoundLabel) {
         if (alarmSoundUri.isEmpty()) {
-            context.getString(R.string.default_alarm_sound)
+            defaultAlarmSoundLabel
         } else {
-            val uri = Uri.parse(alarmSoundUri)
-            RingtoneManager.getRingtone(context, uri)?.getTitle(context)
-                ?: context.getString(R.string.default_alarm_sound)
+            val uri = alarmSoundUri.toUri()
+            RingtoneManager.getRingtone(context, uri)?.getTitle(context) ?: defaultAlarmSoundLabel
         }
     }
 
@@ -174,10 +179,10 @@ fun MainScreen(viewModel: SettingsViewModel) {
                             onClick = {
                                 val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
                                     putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, context.getString(R.string.pick_alarm_sound))
+                                    putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, pickAlarmSoundTitle)
                                     putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
                                     if (alarmSoundUri.isNotEmpty()) {
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, Uri.parse(alarmSoundUri))
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarmSoundUri.toUri())
                                     }
                                 }
                                 ringtoneLauncher.launch(intent)

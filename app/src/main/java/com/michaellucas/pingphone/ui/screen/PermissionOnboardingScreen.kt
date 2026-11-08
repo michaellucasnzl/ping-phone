@@ -1,9 +1,9 @@
 package com.michaellucas.pingphone.ui.screen
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -37,9 +37,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.michaellucas.pingphone.R
 import com.michaellucas.pingphone.viewmodel.SettingsViewModel
 
+@SuppressLint("BatteryLife")
 @Composable
 fun PermissionOnboardingScreen(
     permissions: SettingsViewModel.PermissionState,
@@ -138,7 +140,7 @@ fun PermissionOnboardingScreen(
                         try {
                             context.startActivity(
                                 Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                                    data = Uri.parse("package:${context.packageName}")
+                                    data = "package:${context.packageName}".toUri()
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
                             )
@@ -160,7 +162,7 @@ fun PermissionOnboardingScreen(
                         try {
                             context.startActivity(
                                 Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
-                                    data = Uri.parse("package:${context.packageName}")
+                                    data = "package:${context.packageName}".toUri()
                                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                 }
                             )
