@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Adaptive icon background color — deep teal -->
-    <color name="ic_launcher_background">#004D40</color>
+    <!-- Adaptive icon background color — deep autumn brown-orange -->
+    <color name="ic_launcher_background">#7A3E1A</color>
 
-    <!-- Shared alarm red used by the dismiss window theme and Compose surface -->
-    <color name="alarm_red">#FFB71C1C</color>
+    <!-- Shared alarm red used by the dismiss window theme and Compose surface — deep rust red -->
+    <color name="alarm_red">#9A2C16</color>
 </resources>

@@ -21,6 +21,7 @@ An Android app that rings your phone on demand, even when it's on silent or Do N
 - **SMS trigger** — any phone can trigger the alarm by texting the code; no internet required
 - **Overrides silent/DND mode** — works even when the phone is muted or on Do Not Disturb
 - **Configurable trigger code** — change the default `777` to anything you like
+- **Save & Close** — a full-width button at the bottom of the settings screen applies your changes and exits in one tap; it stays disabled while the trigger code is invalid
 - **Adjustable volume** — set the alarm volume as a percentage of max (10–100%)
 - **Custom alarm sound** — pick any system alarm tone
 - **Test button** — simulate a trigger from within the app to verify everything works
@@ -147,7 +148,7 @@ app/src/main/
 │       │   └── PermissionOnboardingScreen.kt
 │       └── theme/
 └── res/
-    ├── drawable/                     # Adaptive icon + notification icon
+    ├── drawable/                     # Adaptive icon foregrounds (5 candidates + monochrome layer), notification icon
     └── values/                       # Strings, colours, theme
 
 app/src/test/

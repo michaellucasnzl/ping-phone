@@ -1,5 +1,6 @@
 package com.michaellucas.pingphone.ui.screen
 
+import android.app.Activity
 import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
@@ -39,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,11 +54,13 @@ import com.michaellucas.pingphone.R
 import com.michaellucas.pingphone.data.TriggerMatcher
 import com.michaellucas.pingphone.service.AlarmService
 import com.michaellucas.pingphone.viewmodel.SettingsViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: SettingsViewModel) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val triggerCode by viewModel.triggerCode.collectAsStateWithLifecycle()
     val volumePercent by viewModel.volumePercent.collectAsStateWithLifecycle()
     val alarmSoundUri by viewModel.alarmSoundUri.collectAsStateWithLifecycle()
@@ -211,6 +215,21 @@ fun MainScreen(viewModel: SettingsViewModel) {
             }
             if (!permissions.dnd) {
                 WarningCard(stringResource(R.string.warning_dnd))
+            }
+
+            // Save the trigger code and close the settings screen
+            Button(
+                onClick = {
+                    val job = viewModel.saveTriggerCode(triggerCodeInput)
+                    scope.launch {
+                        job.join()
+                        (context as? Activity)?.finish()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = isCodeValid
+            ) {
+                Text(stringResource(R.string.save_and_close))
             }
         }
     }

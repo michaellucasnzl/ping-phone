@@ -1,5 +1,19 @@
 # Changelog
 
+## [Unreleased] — 2026-11-09
+
+### Added
+
+- 5 launcher icon candidates (alarm-clock+phone, ringing phone+waves, bell+phone, phone+alert badge, megaphone) as browser-previewable SVGs + Android vector drawables. Variant A (alarm-clock + phone handset) installed as the default.
+- Android 13+ monochrome themed-icon layer (`ic_launcher_monochrome.xml`) — the system can now tint the launcher icon to match the user's wallpaper/theme.
+- "Save & Close" button on the settings screen — full-width, at the bottom of the settings column. Disabled when the trigger code is invalid; saves and exits when valid.
+
+### Changed
+
+- App colour theme: teal → autumn (burnt-orange/amber Material 3 scheme). Applied throughout: settings, onboarding, status bar, surfaces. Dynamic color remains OFF for consistent branding across all devices.
+- Alarm-dismiss screen colour: bright Material red (#B71C1C) → deep autumn rust red (#9A2C16). Still reads as urgent; harmonises with the autumn brand.
+- Adaptive icon background: deep teal (#004D40) → deep autumn brown-orange (#7A3E1A).
+
 ## [1.1] — 2026-11-08
 
 ### Fixed

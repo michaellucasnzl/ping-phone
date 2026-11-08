@@ -50,6 +50,7 @@
     <string name="pick_alarm_sound">Pick Alarm Sound</string>
     <string name="change">Change</string>
     <string name="save">Save</string>
+    <string name="save_and_close">Save &amp; Close</string>
     <string name="test_alarm">Test Alarm</string>
     <string name="warning_sms">⚠ SMS permission not granted — trigger SMS will not be detected</string>
     <string name="warning_dnd">⚠ DND permission not granted — alarm may not override silent mode</string>
